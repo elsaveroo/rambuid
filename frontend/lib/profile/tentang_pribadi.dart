@@ -1,0 +1,297 @@
+import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import '../l10n/app_localizations.dart';
+import 'edit_profil.dart';
+
+class TentangPribadiPage extends StatefulWidget {
+  final int userId;
+  final String initialNama;
+  final String initialEmail;
+  final String initialAlamat;
+  final String? initialProfileImage;
+  final String initialPassword;
+
+  const TentangPribadiPage({
+    super.key,
+    required this.userId,
+    this.initialNama = 'Pengguna',
+    this.initialEmail = 'user@gmail.com',
+    this.initialAlamat = '', // Default kosong, biar dilogika di build
+    this.initialProfileImage,
+    this.initialPassword = '••••••••',
+  });
+
+  @override
+  State<TentangPribadiPage> createState() => _TentangPribadiPageState();
+}
+
+class _TentangPribadiPageState extends State<TentangPribadiPage> {
+  late String _namaLengkap;
+  late String _email;
+  late String _alamat;
+  String? _profileImage;
+  late String _password;
+
+  @override
+  void initState() {
+    super.initState();
+    _namaLengkap = widget.initialNama;
+    _email = widget.initialEmail;
+    _alamat = widget.initialAlamat;
+    _profileImage = widget.initialProfileImage;
+    _password = widget.initialPassword;
+  }
+
+  void _updateProfile(
+    String nama,
+    String email,
+    String alamat,
+    String? password,
+    String? profileImage,
+  ) {
+    setState(() {
+      _namaLengkap = nama;
+      _email = email;
+      _alamat = alamat;
+      if (password != null && password.isNotEmpty) {
+        _password = '••••••••';
+      }
+      if (profileImage != null) {
+        _profileImage = profileImage;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isEnglish = Localizations.localeOf(context).languageCode == 'en';
+    
+    // Tentukan tampilan alamat
+    String displayAlamat = _alamat;
+    if (_alamat.isEmpty) {
+      displayAlamat = isEnglish ? 'No address set' : 'Belum ada alamat';
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(color: Color(0xFFD6D588)),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.arrow_back),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.all(8),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      l10n.personalInfo,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditProfilPage(
+                            userId: widget.userId,
+                            initialNama: _namaLengkap,
+                            initialEmail: _email,
+                            initialAlamat: _alamat,
+                            initialProfileImage: _profileImage,
+                          ),
+                        ),
+                      );
+
+                      if (result != null && result is Map<String, dynamic>) {
+                        _updateProfile(
+                          result['nama'] as String,
+                          result['email'] as String,
+                          result['alamat'] as String,
+                          result['password'] as String?,
+                          result['profileImage'] as String?,
+                        );
+
+                        if (mounted) {
+                          if (!context.mounted) return;
+                          Navigator.pop(context, {
+                            'nama': _namaLengkap,
+                            'email': _email,
+                            'alamat': _alamat,
+                            'profileImage': _profileImage,
+                          });
+                        }
+                      }
+                    },
+                    child: Text(
+                      l10n.edit.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+
+                    // Profile Picture
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey[200],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: _profileImage != null && _profileImage!.isNotEmpty
+                            ? Image.network(
+                                '${ApiService.baseUrl}$_profileImage',
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(Icons.person, size: 50, color: Colors.grey[400]);
+                                },
+                              )
+                            : Icon(Icons.person, size: 50, color: Colors.grey[400]),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    Text(
+                      _namaLengkap,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    _buildInfoCard(
+                      icon: Icons.person_outline,
+                      label: l10n.fullName,
+                      value: _namaLengkap,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _buildInfoCard(
+                      icon: Icons.email_outlined,
+                      label: l10n.email,
+                      value: _email,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ALAMAT SUDAH DIPERBAIKI (Text Default Berubah)
+                    _buildInfoCard(
+                      icon: Icons.location_on_outlined,
+                      label: l10n.address,
+                      value: displayAlamat,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _buildInfoCard(
+                      icon: Icons.lock_outlined,
+                      label: l10n.password,
+                      value: _password,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 24, color: Colors.black54),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

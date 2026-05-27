@@ -1,0 +1,25 @@
+# Python
+backend/venv/
+backend/.venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+
+# Database - jangan push data user asli
+# rambuid.db sudah dibersihkan, aman untuk di-push
+
+# Upload / generated
+backend/static/images/profiles/
+
+# Flutter
+frontend/build/
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/pubspec.lock
+
+# IDE
+.vscode/settings.json
+.idea/
+*.iml

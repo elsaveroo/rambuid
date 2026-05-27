@@ -1,0 +1,8 @@
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Aplikasi membutuhkan akses lokasi untuk menampilkan posisi dan rambu di peta</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>Aplikasi membutuhkan akses lokasi</string>
+<key>NSAppTransportSecurity</key>
+<dict>
+  <key>NSAllowsArbitraryLoads</key><true/>
+</dict>

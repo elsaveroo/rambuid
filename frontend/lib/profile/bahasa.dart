@@ -1,0 +1,280 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'dart:async'; // Diperlukan untuk Timer
+import '../l10n/app_localizations.dart';
+import '../providers/language_provider.dart';
+
+class BahasaPage extends StatelessWidget {
+  const BahasaPage({super.key});
+
+  // --- FUNGSI POP-UP & NAVIGASI KE BERANDA ---
+  void _showSuccessDialog(BuildContext context, String newLanguageCode) {
+    String title = newLanguageCode == 'id' ? 'Berhasil Diganti' : 'Successfully Changed';
+    String subtitle = newLanguageCode == 'id' 
+        ? 'Bahasa diubah ke Bahasa Indonesia' 
+        : 'Language changed to English';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User tidak bisa klik luar
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 30, horizontal: 24),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD6D588).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: Color(0xFFD6D588), 
+                  size: 50,
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20, 
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333),
+                  fontFamily: 'Poppins', 
+                ),
+              ),
+              const SizedBox(height: 8),
+              
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF777777),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    // --- LOGIKA UTAMA: Timer 2 Detik lalu ke Beranda ---
+    Future.delayed(const Duration(seconds: 2), () {
+      if (context.mounted) {
+        // 1. Tutup Dialog Pop-up
+        Navigator.of(context).pop(); 
+        
+        // 2. Kembali ke Halaman Utama (Beranda)
+        // Ini akan menutup halaman Bahasa & Pengaturan, kembali ke Route paling bawah (Home)
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    final currentLanguage = languageProvider.locale.languageCode;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(color: Color(0xFFD6D588)),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.arrow_back),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.all(8),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      l10n.language,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Language Options
+            Expanded(
+              child: Column(
+                children: [
+                  _buildLanguageOption(
+                    context: context,
+                    code: 'en',
+                    title: 'ENGLISH',
+                    subtitle: '(EN)',
+                    isSelected: currentLanguage == 'en',
+                  ),
+                  _buildDivider(),
+                  _buildLanguageOption(
+                    context: context,
+                    code: 'id',
+                    title: 'BAHASA INDONESIA',
+                    subtitle: '(Default)',
+                    isSelected: currentLanguage == 'id',
+                  ),
+                  _buildDivider(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption({
+    required BuildContext context,
+    required String code,
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        if (!isSelected) {
+          _showLanguageConfirmationDialog(context, code);
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        color: Colors.white, 
+        child: Row(
+          children: [
+            SizedBox(
+              width: 24,
+              child: isSelected
+                  ? const Icon(Icons.check, color: Color(0xFFD6D588), size: 24)
+                  : const SizedBox(),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600, 
+                        color: Colors.black87,
+                      ),
+                    ),
+                    TextSpan(
+                      text: ' $subtitle',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Container(
+      height: 1,
+      color: Colors.grey[200], 
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+    );
+  }
+
+  void _showLanguageConfirmationDialog(BuildContext context, String newLanguage) {
+    final l10n = AppLocalizations.of(context);
+    final languageName = newLanguage == 'en' ? 'English' : 'Bahasa Indonesia'; 
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Text(
+            l10n.changeLanguage,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            '${l10n.confirmLanguageChange} $languageName?',
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text(
+                l10n.cancel,
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                // 1. Ubah Bahasa di Provider
+                await Provider.of<LanguageProvider>(context, listen: false)
+                    .changeLanguage(newLanguage);
+                
+                // 2. Tutup Dialog Konfirmasi
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+                
+                // 3. Tampilkan Pop-up Sukses
+                if (context.mounted) {
+                  _showSuccessDialog(context, newLanguage);
+                }
+              },
+              child: Text(
+                l10n.yes,
+                style: const TextStyle(
+                  color: Color(0xFFD6D588), 
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
